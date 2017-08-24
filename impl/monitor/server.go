@@ -41,11 +41,11 @@ var (
 // Server holds internal state for the monitor server. It serves monitoring
 // responses via a grpc and HTTP API.
 type Server struct {
-	storage *storage.Storage
+	storage storage.Storage
 }
 
 // New creates a new instance of the monitor server.
-func New(storage *storage.Storage) *Server {
+func New(storage storage.Storage) *Server {
 	return &Server{
 		storage: storage,
 	}

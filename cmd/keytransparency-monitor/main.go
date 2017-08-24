@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	cmon "github.com/google/keytransparency/core/monitor"
-	"github.com/google/keytransparency/core/monitor/storage"
+	"github.com/google/keytransparency/impl/monitor/storage/bftkvst"
 	kpb "github.com/google/keytransparency/core/proto/keytransparency_v1_types"
 	"github.com/google/keytransparency/impl/monitor/client"
 	spb "github.com/google/keytransparency/impl/proto/keytransparency_v1_service"
@@ -58,6 +58,8 @@ var (
 	ktCert             = flag.String("kt-cert", "genfiles/server.crt", "Path to kt-server's public key")
 
 	pollPeriod = flag.Duration("poll-period", time.Second*5, "Maximum time between polling the key-server. Ideally, this is equal to the min-period of paramerter of the keyserver.")
+
+	bftkvKeyPath       = flag.String("bftkv", "genfiles/u01", "Path to BFTKV keyrings")
 
 	// TODO(ismail): expose prometheus metrics: a variable that tracks valid/invalid MHs
 	// metricsAddr = flag.String("metrics-addr", ":8081", "The ip:port to publish metrics on")
@@ -125,7 +127,7 @@ func main() {
 		glog.Fatalf("Could not read domain info %v:", err)
 	}
 
-	store := storage.New()
+	store := bftkvst.New(*bftkvKeyPath)
 	srv := monitor.New(store)
 	mopb.RegisterMonitorServiceServer(grpcServer, srv)
 	reflection.Register(grpcServer)

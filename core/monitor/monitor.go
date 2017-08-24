@@ -40,11 +40,11 @@ type Monitor struct {
 	signer      *tcrypto.Signer
 	// TODO(ismail): update last trusted signed log root
 	//trusted     trillian.SignedLogRoot
-	store *storage.Storage
+	store storage.Storage
 }
 
 // New creates a new instance of the monitor.
-func New(logTree, mapTree *trillian.Tree, signer *tcrypto.Signer, store *storage.Storage) (*Monitor, error) {
+func New(logTree, mapTree *trillian.Tree, signer *tcrypto.Signer, store storage.Storage) (*Monitor, error) {
 	logHasher, err := hashers.NewLogHasher(logTree.GetHashStrategy())
 	if err != nil {
 		return nil, fmt.Errorf("Failed creating LogHasher: %v", err)

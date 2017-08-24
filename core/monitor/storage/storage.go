@@ -46,51 +46,13 @@ type MonitoringResult struct {
 	Response *ktpb.GetMutationsResponse
 }
 
-// Storage is an in-memory store for the monitoring results.
-type Storage struct {
-	store  map[int64]*MonitoringResult
-	latest int64
-}
-
-// New initializes a
-func New() *Storage {
-	return &Storage{
-		store: make(map[int64]*MonitoringResult),
-	}
-}
-
-// Set internally stores the given data as a MonitoringResult which can be
-// retrieved by Get.
-func (s *Storage) Set(epoch int64,
-	seenNanos int64,
-	smr *trillian.SignedMapRoot,
-	response *ktpb.GetMutationsResponse,
-	errorList []error) error {
-	// see if we already processed this epoch:
-	if _, ok := s.store[epoch]; ok {
-		return ErrAlreadyStored
-	}
-	// if not we just store the value:
-	s.store[epoch] = &MonitoringResult{
-		Smr:      smr,
-		Seen:     seenNanos,
-		Response: response,
-		Errors:   errorList,
-	}
-	s.latest = epoch
-	return nil
-}
-
-// Get returns the MonitoringResult for the given epoch. It returns an error
-// if the result does not exist.
-func (s *Storage) Get(epoch int64) (*MonitoringResult, error) {
-	if result, ok := s.store[epoch]; ok {
-		return result, nil
-	}
-	return nil, ErrNotFound
-}
-
-// LatestEpoch is a convenience method to retrieve the latest stored epoch.
-func (s *Storage) LatestEpoch() int64 {
-	return s.latest
+type Storage interface {
+	// Set internally stores the given data as a MonitoringResult which can be
+	// retrieved by Get.
+	Set(epoch int64, seenNanos int64, smr *trillian.SignedMapRoot, response *ktpb.GetMutationsResponse, errorList []error) error
+	// Get returns the MonitoringResult for the given epoch. It returns an error
+	// if the result does not exist.
+	Get(epoch int64) (*MonitoringResult, error)
+	// LatestEpoch is a convenience method to retrieve the latest stored epoch.
+	LatestEpoch() int64
 }
