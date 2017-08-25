@@ -120,6 +120,7 @@ services:
       - --vrf=/kt/vrf-key.pem
       - --tls-key=/kt/server.key
       - --tls-cert=/kt/server.crt
+      - --auth-type=insecure-fake
       - --alsologtostderr
       - --v=5
     healthcheck:
