@@ -18,6 +18,8 @@ import (
 	"crypto"
 	"fmt"
 	"time"
+	"net/http"
+	"io/ioutil"
 
 	"github.com/golang/glog"
 
@@ -83,5 +85,44 @@ func (m *Monitor) Process(resp *ktpb.GetMutationsResponse) error {
 		glog.Errorf("m.store.Set(%v, %v, _, _, %v): %v", resp.Epoch, seen, errs, err)
 		return err
 	}
+
+	smrBFTKVKey := string(smr.MapId) + "|" + string(resp.Epoch)
+	glog.Infof("Requesting smr with key: %s", smrBFTKVKey)
+	bftkvSMRHash := readFromBFTKV(smrBFTKVKey)
+	glog.Infof("BFTKV root hash: %s", bftkvSMRHash)
+	glog.Infof("KT root hash: %s", smr.RootHash)
+	// compare smr received from the kt server and from bftkv
+	if bftkvSMRHash != "" {
+		if fmt.Sprintf("%s", smr.RootHash) == bftkvSMRHash {
+			glog.Infoln("Root hashes match.")
+		} else {
+			glog.Infoln("Root hashes don't match.")
+		}
+	}
+
 	return nil
+}
+
+func readFromBFTKV(key string) string  {
+	glog.Infoln("Reading from BFTKV...")
+	req, err := http.NewRequest("GET", "http://docker.for.mac.localhost:6001/read/" + key, nil)
+	if err != nil {
+		glog.Errorf("BFTKV read error: %v", err)
+	}
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		glog.Errorf("BFTKV request error: %v", err)
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		glog.Errorf("Response body read error: %v", err)
+	}
+	// the response is right only if the status okay, otherwise it'll include an error message
+	// so don't return the body if the status is not ok
+	if resp.StatusCode == http.StatusOK {
+		return fmt.Sprintf("%s", bodyBytes)
+	}
+	return ""
 }

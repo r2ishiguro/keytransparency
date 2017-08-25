@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+	"net/http"
+	"strings"
 
 	"github.com/google/keytransparency/core/mutator"
 	"github.com/google/keytransparency/core/mutator/entry"
@@ -345,6 +347,9 @@ func (s *Sequencer) CreateEpoch(ctx context.Context, forceNewEpoch bool) error {
 		return err
 	}
 
+	// store smr in BFTKV
+	writeToBFTKV(string(s.mapID) + "|" + string(revision), string(setResp.GetMapRoot().GetRootHash()))
+
 	mutationsCtr.Add(float64(len(mutations)))
 	indexCtr.Add(float64(len(indexes)))
 	mapUpdateHist.Observe(mapSetEnd.Sub(mapSetStart).Seconds())
@@ -372,4 +377,19 @@ func queueLogLeaf(ctx context.Context, tlog trillian.TrillianLogClient, logID in
 			logID, smrJSON, err)
 	}
 	return nil
+}
+
+func writeToBFTKV(key string, value string) {
+	glog.Infoln("Writing to BFTKV...")
+	req, err := http.NewRequest("GET", "http://docker.for.mac.localhost:6001/write/" + key, strings.NewReader(value))
+	if err != nil {
+		glog.Errorf("BFTKV write error: %v", err)
+	}
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		glog.Errorf("BFTKV request error: %v", err)
+	}
+	defer resp.Body.Close()
+	glog.Info("Response: ", resp)
 }
