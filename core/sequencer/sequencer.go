@@ -381,7 +381,7 @@ func queueLogLeaf(ctx context.Context, tlog trillian.TrillianLogClient, logID in
 
 func writeToBFTKV(key string, value string) {
 	glog.Infoln("Writing to BFTKV...")
-	req, err := http.NewRequest("GET", "http://docker.for.mac.localhost:6001/write/" + key, strings.NewReader(value))
+	req, err := http.NewRequest("GET", "http://docker.for.mac.localhost:6001/writeonce/" + key, strings.NewReader(value))
 	if err != nil {
 		glog.Errorf("BFTKV write error: %v", err)
 	}
